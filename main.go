@@ -53,18 +53,29 @@ func getConfig(rawConfig []byte) (AppConfig, error) {
 
 }
 
-func main() {
+func getConfigFileName() (string, error) {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage:\n%s CONFIG_FILE\n", os.Args[0])
+		err := fmt.Errorf("Usage:\n%s CONFIG_FILE", os.Args[0])
+		return "", err
+	}
+	return os.Args[1], nil
+}
+
+func main() {
+	configFilename, err := getConfigFileName()
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
-	rawConfig, err := getRawConfig(os.Args[1])
+	rawConfig, err := getRawConfig(configFilename)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	config, err := getConfig(rawConfig)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	fmt.Println(config)
 }
