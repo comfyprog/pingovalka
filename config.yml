@@ -1,0 +1,15 @@
+interval: 5s
+size: 64
+
+hosts:
+  - name: Google DNS
+    addr: 8.8.8.8
+    interval: 10s
+
+  - name: Cloudflare DNS
+    addr: 1.1.1.1
+
+  - name: localhost
+    addr: 127.0.0.1
+    size: 128
+
