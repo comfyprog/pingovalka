@@ -1,3 +1,6 @@
+listenPort: 9999
+listenHost: 127.0.0.1
+
 interval: 5s
 size: 64
 

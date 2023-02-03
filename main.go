@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/comfyprog/pingovalka/frontend"
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,8 +25,14 @@ type Host struct {
 }
 
 type AppConfig struct {
+	ListenHost string `yaml:"listenHost"`
+	ListenPort int    `yaml:"listenPort"`
 	PingConfig `yaml:",inline"`
 	Hosts      []Host `yaml:"hosts,flow"`
+}
+
+func (a *AppConfig) ListenAddr() string {
+	return fmt.Sprintf("%s:%d", a.ListenHost, a.ListenPort)
 }
 
 func getRawConfig(filename string) ([]byte, error) {
@@ -34,7 +44,11 @@ func getRawConfig(filename string) ([]byte, error) {
 }
 
 func getConfig(rawConfig []byte) (AppConfig, error) {
-	var config AppConfig = AppConfig{PingConfig: PingConfig{Size: 64, Interval: time.Second}}
+	config := AppConfig{
+		ListenHost: "localhost",
+		ListenPort: 8000,
+		PingConfig: PingConfig{Size: 64, Interval: time.Second},
+	}
 	err := yaml.Unmarshal(rawConfig, &config)
 	if err != nil {
 		return config, err
@@ -78,4 +92,14 @@ func main() {
 		os.Exit(1)
 	}
 	fmt.Println(config)
+
+	frontendFs, err := fs.Sub(frontend.FrontendFs, "dist")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	http.Handle("/", http.FileServer(http.FS(frontendFs)))
+
+	log.Fatal(http.ListenAndServe(config.ListenAddr(), nil))
 }
