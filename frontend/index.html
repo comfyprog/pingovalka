@@ -6,7 +6,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/css/bulma.min.css">
-  <title>Pingovalka</title>
+  <title>{{.Title}} - Pingovalka {{.Version}}</title>
 </head>
 
 <body>
@@ -14,7 +14,7 @@
     <div id="app"></div>
   </div>
   <script>
-    var wsUrl = `{{ . }}`;
+    var wsUrl = `{{ .Url }}`;
   </script>
   <script type="module" src="/src/main.js"></script>
 </body>

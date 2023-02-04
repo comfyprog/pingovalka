@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -25,6 +26,7 @@ type Host struct {
 }
 
 type AppConfig struct {
+	PageTitle  string `yaml:"pageTitle"`
 	ListenHost string `yaml:"listenHost"`
 	ListenPort int    `yaml:"listenPort"`
 	PingConfig `yaml:",inline"`
@@ -45,6 +47,7 @@ func getRawConfig(filename string) ([]byte, error) {
 
 func getConfig(rawConfig []byte) (AppConfig, error) {
 	config := AppConfig{
+		PageTitle:  "pingovalka",
 		ListenHost: "localhost",
 		ListenPort: 8000,
 		PingConfig: PingConfig{Size: 64, Interval: time.Second},
@@ -75,6 +78,39 @@ func getConfigFileName() (string, error) {
 	return os.Args[1], nil
 }
 
+const wsUrl = "/ws"
+const version = "0.0.1"
+
+type IndexPageData struct {
+	Url     template.JS
+	Version string
+	Title   string
+}
+
+func makeIndexData(title string) IndexPageData {
+	data := IndexPageData{}
+	data.Url = wsUrl
+	data.Version = version
+	data.Title = title
+	return data
+}
+
+func switchIndexMiddleware(frontendFs fs.FS, pageTitle string) func(http.Handler) http.HandlerFunc {
+	return func(next http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/" {
+				log.Println("custom index.html")
+				tmpl := template.Must(template.ParseFS(frontendFs, "index.html"))
+				data := makeIndexData(pageTitle)
+				tmpl.Execute(w, data)
+				return
+			} else {
+				next.ServeHTTP(w, r)
+			}
+		}
+	}
+}
+
 func main() {
 	configFilename, err := getConfigFileName()
 	if err != nil {
@@ -99,7 +135,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	http.Handle("/", http.FileServer(http.FS(frontendFs)))
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.FS(frontendFs)))
 
-	log.Fatal(http.ListenAndServe(config.ListenAddr(), nil))
+	switchMiddleware := switchIndexMiddleware(frontendFs, config.PageTitle)
+	muxWithCustomIndex := switchMiddleware(mux)
+
+	log.Fatal(http.ListenAndServe(config.ListenAddr(), muxWithCustomIndex))
 }
