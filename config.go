@@ -14,10 +14,17 @@ type PingConfig struct {
 	Interval time.Duration `yaml:"interval"`
 }
 
+const (
+	online  = "online"
+	offline = "offline"
+)
+
 type Host struct {
-	Name       string `yaml:"name"`
-	Addr       string `yaml:"addr"`
-	PingConfig `yaml:",inline"`
+	Id         int    `json:"id"`
+	Name       string `yaml:"name" json:"name"`
+	Addr       string `yaml:"addr" json:"addr"`
+	Status     string `json:"status"`
+	PingConfig `yaml:",inline" json:"-"`
 }
 
 type AppConfig struct {
@@ -30,6 +37,10 @@ type AppConfig struct {
 
 func (a *AppConfig) ListenAddr() string {
 	return fmt.Sprintf("%s:%d", a.ListenHost, a.ListenPort)
+}
+
+func (a *AppConfig) MakeFullPath(path string, protocol string) string {
+	return fmt.Sprintf("%s://%s%s", protocol, a.ListenAddr(), path)
 }
 
 func getRawConfig(filename string) ([]byte, error) {
@@ -53,6 +64,8 @@ func getConfig(rawConfig []byte) (AppConfig, error) {
 	}
 
 	for i, h := range config.Hosts {
+		config.Hosts[i].Id = i
+		config.Hosts[i].Status = offline
 		if h.Size == 0 {
 			config.Hosts[i].Size = config.Size
 		}

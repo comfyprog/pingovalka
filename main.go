@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/comfyprog/pingovalka/frontend"
+	"github.com/gorilla/websocket"
 )
 
 const wsUrl = "/ws"
@@ -20,9 +21,9 @@ type IndexPageData struct {
 	Title   string
 }
 
-func makeIndexData(title string) IndexPageData {
+func makeIndexData(title string, websocketUrl string) IndexPageData {
 	data := IndexPageData{}
-	data.Url = wsUrl
+	data.Url = template.JS(websocketUrl)
 	data.Version = version
 	data.Title = title
 	return data
@@ -57,7 +58,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println(config)
+	fmt.Printf("%+v", config)
 
 	frontendFs, err := fs.Sub(frontend.FrontendFs, "dist")
 	if err != nil {
@@ -69,9 +70,17 @@ func main() {
 	mux.Handle("/", http.FileServer(http.FS(frontendFs)))
 
 	indexPageTemplate := template.Must(template.ParseFS(frontendFs, "index.html"))
-	indexPageData := makeIndexData(config.PageTitle)
+	indexPageData := makeIndexData(config.PageTitle, config.MakeFullPath(wsUrl, "ws"))
 	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
 	muxWithCustomIndex := switchMiddleware(mux)
+
+	upgrader := websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	wsHandler := makeWebsocketHandler(&upgrader, config.Hosts)
+
+	mux.HandleFunc(wsUrl, wsHandler)
 
 	log.Fatal(http.ListenAndServe(config.ListenAddr(), muxWithCustomIndex))
 }
