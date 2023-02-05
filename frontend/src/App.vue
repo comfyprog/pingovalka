@@ -14,10 +14,22 @@ export default {
       socket: null,
       hosts: [],
       hostsPerRow: 5,
+      soundUp: null,
+      soundUpPlay: false,
+      soundDown: null,
+      soundDownPlay: false,
     }
   },
 
   methods: {
+    playStatusSound(status) {
+      if (status == "online" && this.soundUpPlay) {
+        this.soundUp.play();
+      }
+      if (status == "offline" && this.soundDownPlay) {
+        this.soundDown.play();
+      }
+    },
     increaseHostsPerRow() {
       this.hostsPerRow = Math.min(15, this.hostsPerRow+1);
     },
@@ -39,6 +51,7 @@ export default {
       for (let i = 0; i < this.hosts.length; i++) {
         if (this.hosts[i].id == host.id) {
           this.hosts[i].status = host.status;
+          this.playStatusSound(host.status);
           return;
         }
       }
@@ -78,12 +91,13 @@ export default {
   },
 
   mounted() {
+    this.soundUp = new Audio("/sounds/up.wav");
+    this.soundDown = new Audio("/sounds/down.wav");
     this.wsUrl = `ws://localhost:9999/ws`;
     let socket = new WebSocket(this.wsUrl);
     this.socket = socket;
 
-    socket.onopen = function(e) {
-      // console.log("socket opened", e);
+    socket.onopen = function() {
     }
 
     socket.onclose = function(event) {
@@ -99,7 +113,6 @@ export default {
     }
 
     socket.onmessage = (event) => {
-      // console.log("socket message", event)
       let data = JSON.parse(event.data);
       if (data.type == "list") {
         this.hosts = data.data;
@@ -123,10 +136,25 @@ export default {
 
   <template v-if="currentState == State.Ready">
     <nav class="navbar m-2" role="navigation" aria-label="navigation">
-      <div class="navbar-menu is-active" id="navbar">
+      <div class="navbar-menu is-active is-flex is-vcentered" id="navbar">
         <div class="navbar-start">
-          <button class="button" @click="increaseHostsPerRow()">-</button>
-          <button class="button" @click="decreaseHostsPerRow()">+</button>
+          <span>
+          <a href="#" @click.prevent="increaseHostsPerRow()">[-]</a>
+          <a href="#" @click.prevent="decreaseHostsPerRow()">[+]</a>
+          hosts per row
+          </span>
+
+
+          <label class="checkbox m-1">
+            <input type="checkbox" v-model="soundDownPlay">
+            sound on host down
+          </label>
+
+
+          <label class="checkbox m-1">
+            <input type="checkbox" v-model="soundUpPlay">
+            sound on host up
+          </label>
 
         </div>
       </div>

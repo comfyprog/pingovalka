@@ -91,7 +91,7 @@ func (m *PingMux) GetHosts() []Host {
 
 func (m *PingMux) TransmitStatuses() {
 	for host := range m.mainChan {
-		log.Printf("host %s [%s] changed status to '%s'", host.Name, host.Addr, host.Status)
+		log.Printf("%s [%s] changed status to '%s'", host.Name, host.Addr, host.Status)
 		m.mu.Lock()
 		for i := range m.hosts {
 			if m.hosts[i].Id == host.Id {
