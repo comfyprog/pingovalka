@@ -24,6 +24,15 @@ export default {
     decreaseHostsPerRow() {
       this.hostsPerRow = Math.max(1, this.hostsPerRow-1);
     },
+    getHostClass(host) {
+      if (host.status == "offline") {
+        return "is-danger";
+      } else if (host.status == "online") {
+        return "is-success";
+      } else {
+        return "is-primary";
+      }
+    },
     
   },
 
@@ -103,8 +112,9 @@ export default {
     <nav class="navbar m-2" role="navigation" aria-label="navigation">
       <div class="navbar-menu is-active" id="navbar">
         <div class="navbar-start">
-          <button class="button" @click="increaseHostsPerRow()">+</button>
-          <button class="button" @click="decreaseHostsPerRow()">-</button>
+          <button class="button" @click="increaseHostsPerRow()">-</button>
+          <button class="button" @click="decreaseHostsPerRow()">+</button>
+
         </div>
       </div>
     </nav>
@@ -112,8 +122,16 @@ export default {
 
   
     <div class="columns " v-for="(row, rowIndex) in hostsRows" :key="rowIndex">
-      <div class="column notification is-success is-light m-1" v-for="host in row" :key="host.id">
-        <h1 class="title" :class="titleClass">{{ host.name }}</h1>
+      <div class="column notification is-light m-1" :class="getHostClass(host)" v-for="host in row" :key="host.id">
+        <h1 class="title" :class="titleClass">
+          {{ host.name }}
+          <template v-if="host.status == 'online'">
+          ↑
+          </template>
+          <template v-if="host.status == 'offline'">
+          ↓
+          </template>
+        </h1>
         <h2 class="subtitle">{{ host.addr }}</h2>
       </div>
 
