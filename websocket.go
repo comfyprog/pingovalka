@@ -16,7 +16,12 @@ type HostListMessage struct {
 	Hosts []Host `json:"data"`
 }
 
-func makeWebsocketHandler(upgrader *websocket.Upgrader, hosts []Host) http.HandlerFunc {
+type HostStatusMessage struct {
+	WebsocketMessage
+	Host Host `json:"data"`
+}
+
+func makeWebsocketHandler(upgrader *websocket.Upgrader, pingMux *PingMux) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -24,11 +29,15 @@ func makeWebsocketHandler(upgrader *websocket.Upgrader, hosts []Host) http.Handl
 			return
 		}
 
+		pingChan, pingChanCleanFunc := pingMux.AddSubscriber()
+		defer pingChanCleanFunc()
+
 		sendHostList := true
 
 		for {
 			if sendHostList {
 				sendHostList = false
+				hosts := pingMux.GetHosts()
 				msg := HostListMessage{WebsocketMessage: WebsocketMessage{MsgType: "list"}, Hosts: hosts}
 				err := conn.WriteJSON(msg)
 				if err != nil {
@@ -36,6 +45,15 @@ func makeWebsocketHandler(upgrader *websocket.Upgrader, hosts []Host) http.Handl
 					return
 				}
 				continue
+			}
+
+			for host := range pingChan {
+				msg := HostStatusMessage{WebsocketMessage: WebsocketMessage{MsgType: "status"}, Host: host}
+				err := conn.WriteJSON(msg)
+				if err != nil {
+					log.Println(err)
+					return
+				}
 			}
 
 			err := conn.Close()

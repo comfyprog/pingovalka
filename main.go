@@ -74,11 +74,17 @@ func main() {
 	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
 	muxWithCustomIndex := switchMiddleware(mux)
 
+	stopChan := make(chan struct{})
+	pingChan := pingHosts(config.Hosts, stopChan)
+
+	pingMux := NewPingMux(config.Hosts, pingChan)
+	go pingMux.TransmitStatuses()
+
 	upgrader := websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
 	}
-	wsHandler := makeWebsocketHandler(&upgrader, config.Hosts)
+	wsHandler := makeWebsocketHandler(&upgrader, pingMux)
 
 	mux.HandleFunc(wsUrl, wsHandler)
 

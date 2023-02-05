@@ -33,6 +33,16 @@ export default {
         return "is-primary";
       }
     },
+
+    changeStatus(host) {
+      console.log(new Date(), `host ${host.name} [${host.addr}] changed status to '${host.status}'`);
+      for (let i = 0; i < this.hosts.length; i++) {
+        if (this.hosts[i].id == host.id) {
+          this.hosts[i].status = host.status;
+          return;
+        }
+      }
+    }
     
   },
 
@@ -73,7 +83,7 @@ export default {
     this.socket = socket;
 
     socket.onopen = function(e) {
-      console.log("socket opened", e);
+      // console.log("socket opened", e);
     }
 
     socket.onclose = function(event) {
@@ -89,12 +99,15 @@ export default {
     }
 
     socket.onmessage = (event) => {
-      console.log("socket message", event)
+      // console.log("socket message", event)
       let data = JSON.parse(event.data);
       if (data.type == "list") {
         this.hosts = data.data;
-        console.log(this.hosts);
         this.currentState = this.State.Ready;
+      }
+
+      if (data.type == "status") {
+        this.changeStatus(data.data);
       }
     }
     
