@@ -43,6 +43,7 @@ func makeWebsocketHandler(upgrader *websocket.Upgrader, hosts []Host) http.Handl
 				log.Println(err)
 				return
 			}
+			return
 
 		}
 	}

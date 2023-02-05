@@ -13,11 +13,49 @@ export default {
       wsUrl: wsUrl,
       socket: null,
       hosts: [],
+      hostsPerRow: 5,
     }
   },
 
   methods: {
+    increaseHostsPerRow() {
+      this.hostsPerRow = Math.min(15, this.hostsPerRow+1);
+    },
+    decreaseHostsPerRow() {
+      this.hostsPerRow = Math.max(1, this.hostsPerRow-1);
+    },
     
+  },
+
+  computed: {
+    hostsRows() {
+      let rows = [];
+      let row = [];
+
+      for (let host of this.hosts) {
+        row.push(host);
+        if (row.length == this.hostsPerRow) {
+          rows.push(row);
+          row = [];
+        }
+      }
+
+      if (row.length > 0) {
+        rows.push(row);
+      }
+
+      return rows;
+    },
+
+    titleClass() {
+      if (this.hostsPerRow <= 5) {
+        return "is-2";
+      } else if (this.hostsPerRow <= 10) {
+        return "is-3";
+      } else {
+        return "is-4";
+      }
+    },
   },
 
   mounted() {
@@ -62,12 +100,27 @@ export default {
   </template>
 
   <template v-if="currentState == State.Ready">
-    <div class="columns mt-2">
-      <div class="column notification is-success is-light m-1" v-for="host in hosts" :key="host.id">
-        <h1 class="title">{{ host.name }}</h1>
+    <nav class="navbar m-2" role="navigation" aria-label="navigation">
+      <div class="navbar-menu is-active" id="navbar">
+        <div class="navbar-start">
+          <button class="button" @click="increaseHostsPerRow()">+</button>
+          <button class="button" @click="decreaseHostsPerRow()">-</button>
+        </div>
+      </div>
+    </nav>
+
+
+  
+    <div class="columns " v-for="(row, rowIndex) in hostsRows" :key="rowIndex">
+      <div class="column notification is-success is-light m-1" v-for="host in row" :key="host.id">
+        <h1 class="title" :class="titleClass">{{ host.name }}</h1>
         <h2 class="subtitle">{{ host.addr }}</h2>
       </div>
+
+      <div class="column m-1" v-for="n in hostsPerRow - row.length" :key="n">
+      </div>
     </div>
+
   </template>
 </template>
 
