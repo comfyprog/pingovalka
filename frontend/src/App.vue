@@ -139,8 +139,8 @@ export default {
       <div class="navbar-menu is-active is-flex is-vcentered" id="navbar">
         <div class="navbar-start">
           <span>
-          <a href="#" @click.prevent="increaseHostsPerRow()">[-]</a>
-          <a href="#" @click.prevent="decreaseHostsPerRow()">[+]</a>
+          <a href="#" @click.prevent="increaseHostsPerRow()">[+]</a>
+          <a href="#" @click.prevent="decreaseHostsPerRow()">[-]</a>
           hosts per row
           </span>
 

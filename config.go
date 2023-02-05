@@ -12,6 +12,7 @@ import (
 type PingConfig struct {
 	Size     int           `yaml:"size"`
 	Interval time.Duration `yaml:"interval"`
+	Timeout  time.Duration `yaml:"timeout"`
 }
 
 const (
@@ -56,7 +57,7 @@ func getConfig(rawConfig []byte) (AppConfig, error) {
 		PageTitle:  "pingovalka",
 		ListenHost: "localhost",
 		ListenPort: 8000,
-		PingConfig: PingConfig{Size: 64, Interval: time.Second},
+		PingConfig: PingConfig{Size: 64, Interval: time.Second, Timeout: time.Second},
 	}
 	err := yaml.Unmarshal(rawConfig, &config)
 	if err != nil {
@@ -71,6 +72,9 @@ func getConfig(rawConfig []byte) (AppConfig, error) {
 		}
 		if h.Interval == time.Second*0 {
 			config.Hosts[i].Interval = config.Interval
+		}
+		if h.Timeout == time.Second*0 {
+			config.Hosts[i].Timeout = config.Timeout
 		}
 	}
 
