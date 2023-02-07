@@ -17,59 +17,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const wsUrl = "/ws"
 const version = "0.0.1"
-
-type IndexPageData struct {
-	Url     template.JS
-	Version string
-	Title   string
-}
-
-func makeIndexData(title string, websocketUrl string) IndexPageData {
-	data := IndexPageData{}
-	data.Url = template.JS(websocketUrl)
-	data.Version = version
-	data.Title = title
-	return data
-}
-
-func switchIndexMiddleware(frontendFs fs.FS, indexPageTemplate *template.Template, data IndexPageData) func(http.Handler) http.HandlerFunc {
-	return func(next http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/" {
-				indexPageTemplate.Execute(w, data)
-				return
-			} else {
-				next.ServeHTTP(w, r)
-			}
-		}
-	}
-}
-
-func makeBasicAuthMiddleware(credentials []BasicAuthCredentials) func(http.Handler) http.HandlerFunc {
-	return func(next http.Handler) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			username, password, ok := r.BasicAuth()
-			if !ok {
-				w.Header().Add("WWW-Authenticate", `Basic realm="Authorization:"`)
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
-			for _, c := range credentials {
-				if c.Username == username && c.Password == password {
-					next.ServeHTTP(w, r)
-					return
-				}
-			}
-
-			w.Header().Add("WWW-Authenticate", `Basic realm="Authorization:"`)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-	}
-}
 
 func main() {
 	configFilename, err := getConfigFileName()
@@ -88,20 +36,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	frontendFs, err := fs.Sub(frontend.FrontendFs, "dist")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(frontendFs)))
-
 	stopChan := make(chan struct{})
 	pingChan := pingHosts(config.Hosts, stopChan)
-
 	pingMux := NewPingMux(config.Hosts, pingChan)
-	go pingMux.TransmitStatuses()
 
 	upgrader := websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
 	upgrader.CheckOrigin = func(r *http.Request) bool {
@@ -109,13 +46,21 @@ func main() {
 	}
 	wsHandler := makeWebsocketHandler(&upgrader, pingMux)
 
-	mux.HandleFunc(wsUrl, wsHandler)
+	frontendFs, err := fs.Sub(frontend.FrontendFs, "dist")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	indexPageTemplate := template.Must(template.ParseFS(frontendFs, "index.html"))
 	indexPageData := makeIndexData(config.PageTitle, config.MakeFullPath(wsUrl, "ws"))
 	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
 
 	basicAuthMiddleware := makeBasicAuthMiddleware(config.BasicAuth)
+
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.FS(frontendFs)))
+	mux.HandleFunc(wsUrl, wsHandler)
 
 	muxWithMiddlewares := switchMiddleware(mux)
 
@@ -136,6 +81,8 @@ func main() {
 			log.Fatalf("HTTP server returned error: %v", err)
 		}
 	}()
+
+	go pingMux.TransmitStatuses()
 
 	log.Println("server started")
 
