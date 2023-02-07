@@ -172,13 +172,13 @@ export default {
     <div class="columns " v-for="(row, rowIndex) in hostsRows" :key="rowIndex">
       <div class="column notification is-light m-1" :class="getHostClass(host)" v-for="host in row" :key="host.id">
         <h1 class="title" :class="titleClass">
-          {{ host.name }}
           <template v-if="host.status == 'online'">
           ↑
           </template>
           <template v-if="host.status == 'offline'">
           ↓
           </template>
+          {{ host.name }}
         </h1>
         <h2 class="subtitle">{{ host.addr }}</h2>
       </div>

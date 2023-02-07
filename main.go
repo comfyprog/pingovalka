@@ -137,6 +137,8 @@ func main() {
 		}
 	}()
 
+	log.Println("server started")
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
 
