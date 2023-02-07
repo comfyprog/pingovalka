@@ -8,7 +8,7 @@ do
     for ARCH in 386 amd64 arm arm64
     do
         echo "Building $OS/$ARCH..."
-        FILENAME="pingovalka_$OS-$ARCH.v$VERSION"
+        FILENAME="pingovalka_$OS-$ARCH.$VERSION"
         if [ $OS == "windows" ]; then
             FILENAME="$FILENAME.exe"
         fi
