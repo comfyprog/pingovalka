@@ -18,7 +18,7 @@ func isOnline(addr string, size int, timeout time.Duration) bool {
 	pinger.Timeout = timeout
 	pinger.Run()
 	stats := pinger.Statistics()
-	return stats.PacketsSent == stats.PacketsRecv
+	return stats.PacketsSent > 0 && stats.PacketsSent == stats.PacketsRecv
 }
 
 func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {
@@ -105,5 +105,11 @@ func (m *PingMux) TransmitStatuses() {
 		}
 
 		m.mu.Unlock()
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, c := range m.chans {
+		close(c)
 	}
 }

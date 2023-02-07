@@ -3,6 +3,7 @@
 const State =  {
   Loading: `Loading`,
   Ready: `Ready`,
+  Error: `Error`,
 };
 
 export default {
@@ -100,19 +101,21 @@ export default {
     socket.onopen = function() {
     }
 
-    socket.onclose = function(event) {
+    socket.onclose = event => {
       if (event.wasClean) {
-        console.log("socket closed cleanly", event);
+        console.log("clean socket close: ", event);
       } else {
-        console.log("socket closed dirty");
+        console.log("dirty socket close: ", event);
       }
+      this.currentState = this.State.Error;
     }
 
-    socket.onerror = function(event) {
+    socket.onerror = event => {
       console.log("socket error", event);
+      this.currentState = this.State.Error;
     }
 
-    socket.onmessage = (event) => {
+    socket.onmessage = event => {
       let data = JSON.parse(event.data);
       if (data.type == "list") {
         this.hosts = data.data;
@@ -130,6 +133,10 @@ export default {
 </script>
 
 <template>
+  <template v-if="currentState == State.Error">
+  Connection error, try reloading the page.
+  </template>
+
   <template v-if="currentState == State.Loading">
   Loading...
   </template>
