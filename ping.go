@@ -75,7 +75,6 @@ func (m *PingMux) AddSubscriber() (<-chan Host, func()) {
 	delSubFunc := func() {
 		m.mu.Lock()
 		defer m.mu.Unlock()
-		close(hostChan)
 		delete(m.chans, counter)
 	}
 

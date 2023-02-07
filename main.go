@@ -47,6 +47,30 @@ func switchIndexMiddleware(frontendFs fs.FS, indexPageTemplate *template.Templat
 	}
 }
 
+func makeBasicAuthMiddleware(credentials []BasicAuthCredentials) func(http.Handler) http.HandlerFunc {
+	return func(next http.Handler) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			username, password, ok := r.BasicAuth()
+			if !ok {
+				w.Header().Add("WWW-Authenticate", `Basic realm="Authorization:"`)
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			for _, c := range credentials {
+				if c.Username == username && c.Password == password {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			w.Header().Add("WWW-Authenticate", `Basic realm="Authorization:"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
+}
+
 func main() {
 	configFilename, err := getConfigFileName()
 	if err != nil {
@@ -90,13 +114,20 @@ func main() {
 	indexPageTemplate := template.Must(template.ParseFS(frontendFs, "index.html"))
 	indexPageData := makeIndexData(config.PageTitle, config.MakeFullPath(wsUrl, "ws"))
 	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
-	muxWithHighjackedIndex := switchMiddleware(mux)
+
+	basicAuthMiddleware := makeBasicAuthMiddleware(config.BasicAuth)
+
+	muxWithMiddlewares := switchMiddleware(mux)
+
+	if config.HasBasicAuthConfigured() {
+		muxWithMiddlewares = basicAuthMiddleware(muxWithMiddlewares)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	httpServer := &http.Server{
 		Addr:        config.ListenAddr(),
-		Handler:     muxWithHighjackedIndex,
+		Handler:     muxWithMiddlewares,
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
@@ -110,11 +141,11 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
 
 	<-signalChan
-	log.Println("Shutting down...")
+	log.Println("shutting down...")
 
 	go func() {
 		<-signalChan
-		log.Fatalln("Terminating on repeated shut down signal")
+		log.Fatalln("terminating on repeated shut down signal")
 	}()
 
 	stopChan <- struct{}{}

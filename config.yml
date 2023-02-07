@@ -1,18 +1,44 @@
+pageTitle: "my pings"
+
 listenPort: 9999
 listenHost: 0.0.0.0
 
-interval: 5s
+interval: 10s
 size: 64
+timeout: 1s
+
+basicAuth:
+  - username: user
+    password: password
+  - username: admin
+    password: 1
 
 hosts:
-  - name: Google DNS
-    addr: 8.8.8.8
-    interval: 10s
+  - name: router
+    addr: 192.168.1.1
+    interval: 1s
 
-  - name: Cloudflare DNS
-    addr: 1.1.1.1
+  - name: my comp
+    addr: 192.168.1.2
+
+  - name: comp2
+    addr: 192.168.1.3
+
+  - name: netbook
+    addr: 192.168.1.4
+
+  - name: phone1
+    addr: 192.168.1.50
+    interval: 1s
+    timeout: 2s
+
+  - name: phone2
+    addr: 192.168.1.51
+    interval: 1s
+    timeout: 2s
 
   - name: localhost
     addr: 127.0.0.1
-    size: 128
+    interval: 20s
+
 

@@ -28,12 +28,18 @@ type Host struct {
 	PingConfig `yaml:",inline" json:"-"`
 }
 
+type BasicAuthCredentials struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 type AppConfig struct {
 	PageTitle  string `yaml:"pageTitle"`
 	ListenHost string `yaml:"listenHost"`
 	ListenPort int    `yaml:"listenPort"`
 	PingConfig `yaml:",inline"`
-	Hosts      []Host `yaml:"hosts,flow"`
+	Hosts      []Host                 `yaml:"hosts,flow"`
+	BasicAuth  []BasicAuthCredentials `yaml:"basicAuth,flow"`
 }
 
 func (a *AppConfig) ListenAddr() string {
@@ -42,6 +48,10 @@ func (a *AppConfig) ListenAddr() string {
 
 func (a *AppConfig) MakeFullPath(path string, protocol string) string {
 	return fmt.Sprintf("%s://%s%s", protocol, a.ListenAddr(), path)
+}
+
+func (a *AppConfig) HasBasicAuthConfigured() bool {
+	return len(a.BasicAuth) > 0
 }
 
 func getRawConfig(filename string) ([]byte, error) {
