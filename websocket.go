@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -56,6 +57,7 @@ func makeWebsocketHandler(upgrader *websocket.Upgrader, pingMux *PingMux) http.H
 				}
 			}
 
+			conn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(time.Second))
 			err := conn.Close()
 			if err != nil {
 				log.Println(err)
