@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/comfyprog/pingovalka/frontend"
 	"github.com/gorilla/websocket"
@@ -68,11 +73,6 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.FS(frontendFs)))
 
-	indexPageTemplate := template.Must(template.ParseFS(frontendFs, "index.html"))
-	indexPageData := makeIndexData(config.PageTitle, config.MakeFullPath(wsUrl, "ws"))
-	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
-	muxWithCustomIndex := switchMiddleware(mux)
-
 	stopChan := make(chan struct{})
 	pingChan := pingHosts(config.Hosts, stopChan)
 
@@ -87,5 +87,50 @@ func main() {
 
 	mux.HandleFunc(wsUrl, wsHandler)
 
-	log.Fatal(http.ListenAndServe(config.ListenAddr(), muxWithCustomIndex))
+	indexPageTemplate := template.Must(template.ParseFS(frontendFs, "index.html"))
+	indexPageData := makeIndexData(config.PageTitle, config.MakeFullPath(wsUrl, "ws"))
+	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
+	muxWithHighjackedIndex := switchMiddleware(mux)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	httpServer := &http.Server{
+		Addr:        config.ListenAddr(),
+		Handler:     muxWithHighjackedIndex,
+		BaseContext: func(_ net.Listener) context.Context { return ctx },
+	}
+
+	go func() {
+		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("HTTP server returned error: %v", err)
+		}
+	}()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
+
+	<-signalChan
+	log.Println("Shutting down...")
+
+	go func() {
+		<-signalChan
+		log.Fatalln("Terminating on repeated shut down signal")
+	}()
+
+	stopChan <- struct{}{}
+
+	gracefulCtx, cancelShutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelShutdown()
+
+	if err := httpServer.Shutdown(gracefulCtx); err != nil {
+		log.Printf("shutdown error: %v\n", err)
+		defer os.Exit(1)
+		return
+	} else {
+		log.Println("server stopped")
+	}
+
+	cancel()
+	defer os.Exit(0)
+	return
 }
