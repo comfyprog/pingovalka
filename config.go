@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"runtime"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -16,8 +18,9 @@ type PingConfig struct {
 }
 
 const (
-	online  = "online"
-	offline = "offline"
+	online   = "online"
+	offline  = "offline"
+	progname = "pingovalka"
 )
 
 type Host struct {
@@ -54,6 +57,38 @@ func (a *AppConfig) HasBasicAuthConfigured() bool {
 	return len(a.BasicAuth) > 0
 }
 
+func getFlags(args []string) (filename string, showVersion bool, output string, err error) {
+	flags := flag.NewFlagSet(progname, flag.ContinueOnError)
+	var buf bytes.Buffer
+	flags.SetOutput(&buf)
+
+	fileUsage := "path to config file"
+	flags.StringVar(&filename, "config", "config.yml", fileUsage)
+	flags.StringVar(&filename, "c", "config.yml", fileUsage+" (shorthand)")
+
+	versionUsage := "show program version"
+	flags.BoolVar(&showVersion, "version", false, versionUsage)
+	flags.BoolVar(&showVersion, "v", false, versionUsage+" (shorthand)")
+
+	flags.Usage = func() {
+		fmt.Fprintf(flags.Output(), "Usage of %s:\n", progname)
+		flags.PrintDefaults()
+		fmt.Fprintf(flags.Output(), "\nProgram uses the github.com/go-ping/ping library "+
+			"that attempts to send an \"unprivileged\" ping via UDP.\n"+
+			"On Linux, this must be enabled with the following sysctl command:\n"+
+			"\tsudo sysctl -w net.ipv4.ping_group_range=\"0 2147483647\"\n")
+	}
+
+	err = flags.Parse(args)
+	output = buf.String()
+
+	return
+}
+
+func getVersionString(version string) string {
+	return fmt.Sprintf("%s v%s built with %s", progname, version, runtime.Version())
+}
+
 func getRawConfig(filename string) ([]byte, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -62,7 +97,7 @@ func getRawConfig(filename string) ([]byte, error) {
 	return content, nil
 }
 
-func getConfig(rawConfig []byte) (AppConfig, error) {
+func parseConfig(rawConfig []byte) (AppConfig, error) {
 	config := AppConfig{
 		PageTitle:  "pingovalka",
 		ListenHost: "localhost",
@@ -90,12 +125,4 @@ func getConfig(rawConfig []byte) (AppConfig, error) {
 
 	return config, nil
 
-}
-
-func getConfigFileName() (string, error) {
-	if len(os.Args) < 2 {
-		err := fmt.Errorf("Usage:\n%s CONFIG_FILE", os.Args[0])
-		return "", err
-	}
-	return os.Args[1], nil
 }

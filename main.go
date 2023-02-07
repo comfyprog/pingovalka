@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -20,17 +21,28 @@ import (
 const version = "0.0.1"
 
 func main() {
-	configFilename, err := getConfigFileName()
-	if err != nil {
+	configFilename, showVersion, output, err := getFlags(os.Args[1:])
+
+	if err == flag.ErrHelp {
+		fmt.Println(output)
+		os.Exit(2)
+	} else if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	if showVersion {
+		fmt.Println(getVersionString(version))
+		os.Exit(0)
+	}
+
 	rawConfig, err := getRawConfig(configFilename)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	config, err := getConfig(rawConfig)
+
+	config, err := parseConfig(rawConfig)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -113,4 +125,5 @@ func main() {
 	cancel()
 	defer os.Exit(0)
 	return
+
 }
