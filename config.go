@@ -63,8 +63,8 @@ func getFlags(args []string) (filename string, showVersion bool, output string, 
 	flags.SetOutput(&buf)
 
 	fileUsage := "path to config file"
-	flags.StringVar(&filename, "config", "config.yml", fileUsage)
-	flags.StringVar(&filename, "c", "config.yml", fileUsage+" (shorthand)")
+	flags.StringVar(&filename, "config", "", fileUsage)
+	flags.StringVar(&filename, "c", "", fileUsage+" (shorthand)")
 
 	versionUsage := "show program version"
 	flags.BoolVar(&showVersion, "version", false, versionUsage)
