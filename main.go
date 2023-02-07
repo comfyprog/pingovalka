@@ -18,7 +18,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const version = "0.0.1"
+var version string
 
 func main() {
 	configFilename, showVersion, output, err := getFlags(os.Args[1:])
@@ -34,6 +34,11 @@ func main() {
 	if showVersion {
 		fmt.Println(getVersionString(version))
 		os.Exit(0)
+	}
+
+	if configFilename == "" {
+		fmt.Println("Error: no config file provided")
+		os.Exit(1)
 	}
 
 	rawConfig, err := getRawConfig(configFilename)
