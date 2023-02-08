@@ -101,7 +101,7 @@ func main() {
 
 	go pingMux.TransmitStatuses()
 
-	log.Println("server started")
+	log.Printf("server started on %s\n", config.ListenAddr())
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)

@@ -2,7 +2,7 @@
 pageTitle: "my pings"
 
 listenPort: 9999
-listenHost: 0.0.0.0
+listenHost: 127.0.0.1
 
 # global ping params
 interval: 10s

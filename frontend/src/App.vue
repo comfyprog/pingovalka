@@ -94,7 +94,6 @@ export default {
   mounted() {
     this.soundUp = new Audio("/sounds/up.wav");
     this.soundDown = new Audio("/sounds/down.wav");
-    this.wsUrl = `ws://localhost:9999/ws`;
     let socket = new WebSocket(this.wsUrl);
     this.socket = socket;
 
