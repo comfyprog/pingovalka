@@ -19,6 +19,9 @@ export default {
       soundUpPlay: false,
       soundDown: null,
       soundDownPlay: false,
+      reconnectInterval: 0,
+      maxReconnectInterval: 10000,
+      reconnectTimerId: null,
     }
   },
 
@@ -56,7 +59,70 @@ export default {
           return;
         }
       }
-    }
+    },
+
+    resetReconnectTimer() {
+      if (!this.reconnectTimerId) {
+        return;
+      }
+      clearTimeout(this.reconnectTimerId);
+      this.reconnectTimerId = null;
+    },
+
+    reconnect() {
+      if (this.reconnectTimerId) {
+        return;
+      }
+      this.reconnectInterval = Math.min(this.maxReconnectInterval, this.reconnectInterval + 1000);
+      console.log(`attempting to reconnect in ${this.reconnectInterval}ms`);
+      window.reconnectTimerId = setTimeout(() => this.interactWithServer(), this.reconnectInterval);
+    },
+
+    interactWithServer() {
+      let socket = new WebSocket(this.wsUrl);
+      this.socket = socket;
+
+      socket.onerror = event => {
+        console.log(`websocket error: ${event}`);
+        this.resetReconnectTimer();
+        this.reconnect();
+      }
+
+      socket.onopen = () => {
+        console.log("established new websocket connection")
+        this.resetReconnectTimer();
+        this.reconnectInterval = 0;
+      }
+
+      socket.onclose = event => {
+        if (event.wasClean) {
+          console.log("clean socket close: ", event);
+        } else {
+          console.log("dirty socket close: ", event);
+        }
+        this.currentState = this.State.Error;
+
+        this.reconnect();
+      }
+
+      socket.onerror = event => {
+        console.log("socket error", event);
+        this.currentState = this.State.Error;
+      }
+
+      socket.onmessage = event => {
+        let data = JSON.parse(event.data);
+        if (data.type == "list") {
+          this.hosts = data.data;
+          this.currentState = this.State.Ready;
+        }
+
+        if (data.type == "status") {
+          this.changeStatus(data.data);
+        }
+      }
+
+    },
     
   },
 
@@ -94,46 +160,15 @@ export default {
   mounted() {
     this.soundUp = new Audio("/sounds/up.wav");
     this.soundDown = new Audio("/sounds/down.wav");
-    let socket = new WebSocket(this.wsUrl);
-    this.socket = socket;
 
-    socket.onopen = function() {
-    }
-
-    socket.onclose = event => {
-      if (event.wasClean) {
-        console.log("clean socket close: ", event);
-      } else {
-        console.log("dirty socket close: ", event);
-      }
-      this.currentState = this.State.Error;
-    }
-
-    socket.onerror = event => {
-      console.log("socket error", event);
-      this.currentState = this.State.Error;
-    }
-
-    socket.onmessage = event => {
-      let data = JSON.parse(event.data);
-      if (data.type == "list") {
-        this.hosts = data.data;
-        this.currentState = this.State.Ready;
-      }
-
-      if (data.type == "status") {
-        this.changeStatus(data.data);
-      }
-    }
-    
-    
+    this.interactWithServer();
   },
 }
 </script>
 
 <template>
   <template v-if="currentState == State.Error">
-  Connection error, try reloading the page.
+  Connection error, will try to reconnect in {{ Math.floor(reconnectInterval / 1000) }}s.
   </template>
 
   <template v-if="currentState == State.Loading">
