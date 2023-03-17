@@ -22,6 +22,7 @@ export default {
       reconnectInterval: 0,
       maxReconnectInterval: 10000,
       reconnectTimerId: null,
+      hostInfo: null,
     }
   },
 
@@ -209,7 +210,8 @@ export default {
 
   
     <div class="columns " v-for="(row, rowIndex) in hostsRows" :key="rowIndex">
-      <div class="column notification is-light m-1" :class="getHostClass(host)" v-for="host in row" :key="host.id">
+      <div class="column notification is-light m-1" :class="getHostClass(host)" v-for="host in row" :key="host.id"
+        @click="hostInfo = host">
         <h1 class="title" :class="titleClass">
           <template v-if="host.status == 'online'">
           ↑
@@ -220,15 +222,45 @@ export default {
           {{ host.name }}
         </h1>
         <h2 class="subtitle">{{ host.addr }}</h2>
-        <small>
-          {{ host.status + " since " + convertUnixSecondsToDate(host.statusChangeTime) }}
-        </small>
       </div>
 
       <div class="column m-1" v-for="n in hostsPerRow - row.length" :key="n">
       </div>
     </div>
 
+
+
+    <div class="modal" :class="{ 'is-active': hostInfo }" v-if="hostInfo">
+      <div class="modal-background" @click="hostInfo = null"></div>
+      <div class="modal-content">
+        <div class="card">
+          <div class="card-content">
+            <p class="title">{{ hostInfo.name }}</p>
+            <p class="subtitle">{{ hostInfo.addr }}</p>
+
+            <div class="content">
+              <div class="notification is-light" :class="{'is-danger': hostInfo.status == 'offline', 'is-success': hostInfo.status == 'online'}">
+                <small>
+                 <strong>{{ hostInfo.status }} since {{ convertUnixSecondsToDate(hostInfo.statusChangeTime) }}</strong>
+                </small>
+              </div>
+
+              <template v-if="hostInfo.info">
+              <div class="block" v-for="info in hostInfo.info">
+                <p class="title is-6">{{ info.title }}</p>
+                <p class="subtitle is-6">{{ info.text }}</p>
+              </div>
+              </template>
+              
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <button class="modal-close is-large" aria-label="close" @click="hostInfo = null"></button>
+    </div>
+    
   </template>
 </template>
 
