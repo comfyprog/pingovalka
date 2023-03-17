@@ -248,7 +248,8 @@ export default {
               <template v-if="hostInfo.info">
               <div class="block" v-for="info in hostInfo.info">
                 <p class="title is-6">{{ info.title }}</p>
-                <p class="subtitle is-6">{{ info.text }}</p>
+                <p class="subtitle is-6" v-if="info.isHtml" v-html="info.text"></p>
+                <p class="subtitle is-6" v-else>{{ info.text }}</p>
               </div>
               </template>
               

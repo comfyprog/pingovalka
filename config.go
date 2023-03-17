@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -24,13 +26,15 @@ const (
 )
 
 type RawHostInfo struct {
-	Key   string `yaml:"key"`
-	Value string `yaml:"value"`
+	Key          string `yaml:"key"`
+	Value        string `yaml:"value"`
+	WithMarkdown bool   `yaml:"markdown"`
 }
 
 type HostInfo struct {
-	Title string `json:"title"`
-	Text  string `json:"text"`
+	Title  string `json:"title"`
+	Text   string `json:"text"`
+	IsHtml bool   `json:"isHtml"`
 }
 
 type Host struct {
@@ -46,7 +50,15 @@ type Host struct {
 
 func (h *Host) extractInfoFromRaw() {
 	for _, rawItem := range h.RawInfo {
-		h.Info = append(h.Info, HostInfo{Title: rawItem.Key, Text: rawItem.Value})
+		if rawItem.WithMarkdown {
+			rawBytes := []byte(rawItem.Value)
+			unsafeHtml := blackfriday.Run(rawBytes)
+			html := string(bluemonday.UGCPolicy().SanitizeBytes(unsafeHtml))
+
+			h.Info = append(h.Info, HostInfo{Title: rawItem.Key, Text: html, IsHtml: true})
+		} else {
+			h.Info = append(h.Info, HostInfo{Title: rawItem.Key, Text: rawItem.Value})
+		}
 	}
 }
 
