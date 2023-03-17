@@ -15,6 +15,7 @@ export default {
       socket: null,
       hosts: [],
       hostsPerRow: 5,
+      fontSize: 3,
       soundUp: null,
       soundUpPlay: false,
       soundDown: null,
@@ -41,6 +42,15 @@ export default {
     decreaseHostsPerRow() {
       this.hostsPerRow = Math.max(1, this.hostsPerRow-1);
     },
+
+
+    decreaseFontSize() {
+      this.fontSize = Math.min(6, this.fontSize+1);
+    },
+    increaseFontSize() {
+      this.fontSize = Math.max(1, this.fontSize-1);
+    },
+    
     getHostClass(host) {
       if (host.status == "offline") {
         return "is-danger";
@@ -153,13 +163,7 @@ export default {
     },
 
     titleClass() {
-      if (this.hostsPerRow <= 5) {
-        return "is-2";
-      } else if (this.hostsPerRow <= 10) {
-        return "is-3";
-      } else {
-        return "is-4";
-      }
+      return `is-${this.fontSize}`;
     },
   },
 
@@ -192,6 +196,13 @@ export default {
           </span>
 
 
+
+          <span>
+          <a href="#" @click.prevent="increaseFontSize()">[+]</a>
+          <a href="#" @click.prevent="decreaseFontSize()">[-]</a>
+          font size
+          </span>
+
           <label class="checkbox m-1">
             <input type="checkbox" v-model="soundDownPlay">
             sound on host down
@@ -221,7 +232,6 @@ export default {
           </template>
           {{ host.name }}
         </h1>
-        <h2 class="subtitle">{{ host.addr }}</h2>
       </div>
 
       <div class="column m-1" v-for="n in hostsPerRow - row.length" :key="n">
