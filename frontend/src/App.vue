@@ -50,15 +50,20 @@ export default {
       }
     },
 
-    changeStatus(host) {
+    changeStatus(host) {      
       console.log(new Date(), `host ${host.name} [${host.addr}] changed status to '${host.status}'`);
       for (let i = 0; i < this.hosts.length; i++) {
         if (this.hosts[i].id == host.id) {
           this.hosts[i].status = host.status;
+          this.hosts[i].statusChangeTime = host.statusChangeTime;
           this.playStatusSound(host.status);
           return;
         }
       }
+    },
+
+    convertUnixSecondsToDate(n) {
+      return new Date(n * 1000);
     },
 
     resetReconnectTimer() {
@@ -215,6 +220,9 @@ export default {
           {{ host.name }}
         </h1>
         <h2 class="subtitle">{{ host.addr }}</h2>
+        <small>
+          {{ host.status + " since " + convertUnixSecondsToDate(host.statusChangeTime) }}
+        </small>
       </div>
 
       <div class="column m-1" v-for="n in hostsPerRow - row.length" :key="n">

@@ -37,6 +37,7 @@ func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {
 					}
 					if newStatus != h.Status {
 						h.Status = newStatus
+						h.StatusChangeTime = time.Now().Unix()
 						status <- h
 					}
 				case <-stop:
@@ -95,6 +96,7 @@ func (m *PingMux) TransmitStatuses() {
 		for i := range m.hosts {
 			if m.hosts[i].Id == host.Id {
 				m.hosts[i].Status = host.Status
+				m.hosts[i].StatusChangeTime = host.StatusChangeTime
 				break
 			}
 		}

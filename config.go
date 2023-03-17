@@ -23,12 +23,31 @@ const (
 	progname = "pingovalka"
 )
 
+type RawHostInfo struct {
+	Key   string `yaml:"key"`
+	Value string `yaml:"value"`
+}
+
+type HostInfo struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
+}
+
 type Host struct {
-	Id         int    `json:"id"`
-	Name       string `yaml:"name" json:"name"`
-	Addr       string `yaml:"addr" json:"addr"`
-	Status     string `json:"status"`
-	PingConfig `yaml:",inline" json:"-"`
+	Id               int           `json:"id"`
+	Name             string        `yaml:"name" json:"name"`
+	Addr             string        `yaml:"addr" json:"addr"`
+	RawInfo          []RawHostInfo `yaml:"info" json:"-"`
+	Info             []HostInfo    `yaml:"-" json:"info"`
+	Status           string        `yaml:"-" json:"status"`
+	StatusChangeTime int64         `yaml:"-" json:"statusChangeTime"`
+	PingConfig       `yaml:",inline" json:"-"`
+}
+
+func (h *Host) extractInfoFromRaw() {
+	for _, rawItem := range h.RawInfo {
+		h.Info = append(h.Info, HostInfo{Title: rawItem.Key, Text: rawItem.Value})
+	}
 }
 
 type BasicAuthCredentials struct {
@@ -112,6 +131,7 @@ func parseConfig(rawConfig []byte) (AppConfig, error) {
 	for i, h := range config.Hosts {
 		config.Hosts[i].Id = i
 		config.Hosts[i].Status = offline
+		config.Hosts[i].extractInfoFromRaw()
 		if h.Size == 0 {
 			config.Hosts[i].Size = config.Size
 		}

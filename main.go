@@ -52,6 +52,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	fmt.Printf("%+v\n", config)
 
 	stopChan := make(chan struct{})
 	pingChan := pingHosts(config.Hosts, stopChan)
