@@ -15,7 +15,7 @@ export default {
       socket: null,
       hosts: [],
       hostsPerRow: 5,
-      fontSize: 3,
+      fontSize: 5,
       soundUp: null,
       soundUpPlay: false,
       soundDown: null,
@@ -73,8 +73,8 @@ export default {
       }
     },
 
-    convertUnixSecondsToDate(n) {
-      return new Date(n * 1000);
+    convertUnixSecondsToDateString(n) {
+      return (new Date(n * 1000)).toLocaleString();
     },
 
     resetReconnectTimer() {
@@ -251,16 +251,30 @@ export default {
             <div class="content">
               <div class="notification is-light" :class="{'is-danger': hostInfo.status == 'offline', 'is-success': hostInfo.status == 'online'}">
                 <small>
-                 <strong>{{ hostInfo.status }} since {{ convertUnixSecondsToDate(hostInfo.statusChangeTime) }}</strong>
+                 <strong>{{ hostInfo.status }} since: {{ convertUnixSecondsToDateString(hostInfo.statusChangeTime) }}</strong>
                 </small>
               </div>
 
               <template v-if="hostInfo.info">
-              <div class="block" v-for="info in hostInfo.info">
-                <p class="title is-6">{{ info.title }}</p>
+<!--              <div class="box" v-for="info in hostInfo.info">
+                <p class="title is-6 has-text-centered">{{ info.title }}</p>
                 <p class="subtitle is-6" v-if="info.isHtml" v-html="info.text"></p>
                 <p class="subtitle is-6" v-else>{{ info.text }}</p>
               </div>
+
+-->
+
+
+              <table class="table is-bordered is-hoverable is-narrow is-fullwidth">
+              <template v-for="info in hostInfo.info">
+                <tr><th class="title is-6 has-text-centered">{{ info.title }}</th></tr>
+                <tr>
+                  <td class="subtitle is-6" v-if="info.isHtml" v-html="info.text"></td>
+                  <td class="subtitle is-6" v-else>{{ info.text }}</td>
+                </tr>
+              </template>
+              </table>
+              
               </template>
               
             </div>
