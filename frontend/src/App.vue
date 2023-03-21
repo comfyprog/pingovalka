@@ -28,6 +28,13 @@ export default {
   },
 
   methods: {
+    getWebsocketAddress() {
+      if (location.protocol.startsWith("https")) {
+        return `wss://${location.host}${wsUrl}`
+      }
+        return `ws://${location.host}${wsUrl}`
+    },
+  
     playStatusSound(status) {
       if (status == "online" && this.soundUpPlay) {
         this.soundUp.play();
@@ -95,7 +102,8 @@ export default {
     },
 
     interactWithServer() {
-      let socket = new WebSocket(this.wsUrl);
+      let wsAddress = this.getWebsocketAddress();
+      let socket = new WebSocket(wsAddress);
       this.socket = socket;
 
       socket.onerror = event => {
@@ -256,24 +264,15 @@ export default {
               </div>
 
               <template v-if="hostInfo.info">
-<!--              <div class="box" v-for="info in hostInfo.info">
-                <p class="title is-6 has-text-centered">{{ info.title }}</p>
-                <p class="subtitle is-6" v-if="info.isHtml" v-html="info.text"></p>
-                <p class="subtitle is-6" v-else>{{ info.text }}</p>
-              </div>
-
--->
-
-
-              <table class="table is-bordered is-hoverable is-narrow is-fullwidth">
-              <template v-for="info in hostInfo.info">
-                <tr><th class="title is-6 has-text-centered">{{ info.title }}</th></tr>
-                <tr>
-                  <td class="subtitle is-6" v-if="info.isHtml" v-html="info.text"></td>
-                  <td class="subtitle is-6" v-else>{{ info.text }}</td>
-                </tr>
-              </template>
-              </table>
+                <table class="table is-bordered is-hoverable is-narrow is-fullwidth">
+                <template v-for="info in hostInfo.info">
+                  <tr><th class="title is-6 has-text-centered">{{ info.title }}</th></tr>
+                  <tr>
+                    <td class="subtitle is-6" v-if="info.isHtml" v-html="info.text"></td>
+                    <td class="subtitle is-6" v-else>{{ info.text }}</td>
+                  </tr>
+                </template>
+                </table>
               
               </template>
               

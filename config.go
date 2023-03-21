@@ -80,10 +80,6 @@ func (a *AppConfig) ListenAddr() string {
 	return fmt.Sprintf("%s:%d", a.ListenHost, a.ListenPort)
 }
 
-func (a *AppConfig) MakeFullPath(path string, protocol string) string {
-	return fmt.Sprintf("%s://%s%s", protocol, a.ListenAddr(), path)
-}
-
 func (a *AppConfig) HasBasicAuthConfigured() bool {
 	return len(a.BasicAuth) > 0
 }

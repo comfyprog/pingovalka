@@ -70,7 +70,7 @@ func main() {
 	}
 
 	indexPageTemplate := template.Must(template.ParseFS(frontendFs, "index.html"))
-	indexPageData := makeIndexData(config.PageTitle, config.MakeFullPath(wsUrl, "ws"))
+	indexPageData := makeIndexData(config.PageTitle, wsUrl)
 	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
 
 	basicAuthMiddleware := makeBasicAuthMiddleware(config.BasicAuth)
