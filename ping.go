@@ -8,17 +8,17 @@ import (
 	"github.com/go-ping/ping"
 )
 
-func isOnline(addr string, size int, timeout time.Duration) bool {
+func isOnline(addr string, count int, size int, timeout time.Duration) bool {
 	pinger, err := ping.NewPinger(addr)
 	if err != nil {
 		panic(err)
 	}
-	pinger.Count = 1
+	pinger.Count = count
 	pinger.Size = size
 	pinger.Timeout = timeout
 	pinger.Run()
 	stats := pinger.Statistics()
-	return stats.PacketsSent > 0 && stats.PacketsSent == stats.PacketsRecv
+	return stats.PacketsSent > 0 && stats.PacketsRecv > (stats.PacketsSent/2)
 }
 
 func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {

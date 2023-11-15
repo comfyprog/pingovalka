@@ -14,6 +14,7 @@ import (
 )
 
 type PingConfig struct {
+	Count    int           `yaml:"count"`
 	Size     int           `yaml:"size"`
 	Interval time.Duration `yaml:"interval"`
 	Timeout  time.Duration `yaml:"timeout"`
@@ -129,7 +130,7 @@ func parseConfig(rawConfig []byte) (AppConfig, error) {
 		PageTitle:  "pingovalka",
 		ListenHost: "localhost",
 		ListenPort: 8000,
-		PingConfig: PingConfig{Size: 64, Interval: time.Second, Timeout: time.Second},
+		PingConfig: PingConfig{Count: 1, Size: 64, Interval: time.Second, Timeout: time.Second},
 	}
 	err := yaml.Unmarshal(rawConfig, &config)
 	if err != nil {

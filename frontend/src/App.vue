@@ -69,7 +69,9 @@ export default {
     },
 
     changeStatus(host) {      
-      console.log(new Date(), `host ${host.name} [${host.addr}] changed status to '${host.status}'`);
+      console.log(
+        this.convertUnixSecondsToDateString(host.statusChangeTime),
+        `host ${host.name} [${host.addr}] changed status to '${host.status}'`);
       for (let i = 0; i < this.hosts.length; i++) {
         if (this.hosts[i].id == host.id) {
           this.hosts[i].status = host.status;
@@ -240,6 +242,9 @@ export default {
           </template>
           {{ host.name }}
         </h1>
+        <h6 class="subtitle is-7">
+        {{ host.addr }}
+        </h6>
       </div>
 
       <div class="column m-1" v-for="n in hostsPerRow - row.length" :key="n">
