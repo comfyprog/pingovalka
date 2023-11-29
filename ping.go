@@ -86,13 +86,15 @@ func (m *PingMux) AddSubscriber() (<-chan Host, func()) {
 func (m *PingMux) GetHosts() []Host {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.hosts
+	s := make([]Host, len(m.hosts))
+	copy(s, m.hosts)
+	return s
 }
 
 func (m *PingMux) TransmitStatuses() {
 	for host := range m.mainChan {
-		log.Printf("%s [%s] changed status to '%s'", host.Name, host.Addr, host.Status)
 		m.mu.Lock()
+		log.Printf("%s [%s] changed status to '%s'", host.Name, host.Addr, host.Status)
 		for i := range m.hosts {
 			if m.hosts[i].Id == host.Id {
 				m.hosts[i].Status = host.Status
