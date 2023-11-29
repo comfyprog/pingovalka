@@ -126,7 +126,7 @@ export default {
         } else {
           console.log("dirty socket close: ", event);
         }
-        this.currentState = this.State.Error;
+        // this.currentState = this.State.Error;
 
         this.reconnect();
       }
