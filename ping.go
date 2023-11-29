@@ -30,7 +30,7 @@ func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {
 				select {
 				case <-ticker.C:
 					var newStatus string
-					if isOnline(h.Addr, h.PingConfig.Size, h.PingConfig.Timeout) {
+					if isOnline(h.Addr, h.PingConfig.Count, h.PingConfig.Size, h.PingConfig.Timeout) {
 						newStatus = online
 					} else {
 						newStatus = offline

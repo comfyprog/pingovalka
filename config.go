@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"runtime"
 	"time"
 
@@ -118,7 +118,7 @@ func getVersionString(version string) string {
 }
 
 func getRawConfig(filename string) ([]byte, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
