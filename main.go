@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -63,23 +62,19 @@ func main() {
 	}
 	wsHandler := makeWebsocketHandler(&upgrader, pingMux)
 
-	frontendFs, err := fs.Sub(frontend.FrontendFs, "dist")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	indexPageTemplate := template.Must(template.ParseFS(frontendFs, "index.html"))
+	indexPageTemplate := template.Must(template.ParseFS(frontend.FrontendFs, "index.html"))
 	indexPageData := makeIndexData(config.PageTitle, wsUrl)
-	switchMiddleware := switchIndexMiddleware(frontendFs, indexPageTemplate, indexPageData)
+
+	switchMiddleware := switchIndexMiddleware(frontend.FrontendFs, indexPageTemplate, indexPageData)
+	logRequests := requestLogMiddleware()
 
 	basicAuthMiddleware := makeBasicAuthMiddleware(config.BasicAuth)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", http.FileServer(http.FS(frontendFs)))
+	mux.Handle("/", http.FileServer(http.FS(frontend.FrontendFs)))
 	mux.HandleFunc(wsUrl, wsHandler)
 
-	muxWithMiddlewares := switchMiddleware(mux)
+	muxWithMiddlewares := logRequests(switchMiddleware(mux))
 
 	if config.HasBasicAuthConfigured() {
 		muxWithMiddlewares = basicAuthMiddleware(muxWithMiddlewares)
