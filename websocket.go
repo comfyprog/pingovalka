@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
+	"net"
 	"net/http"
 	"time"
 
@@ -25,6 +27,12 @@ type HostStatusMessage struct {
 func makeWebsocketHandler(upgrader *websocket.Upgrader, pingMux *PingMux) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		err = conn.UnderlyingConn().(*tls.Conn).NetConn().(*net.TCPConn).SetKeepAlive(true)
 		if err != nil {
 			log.Println(err)
 			return
