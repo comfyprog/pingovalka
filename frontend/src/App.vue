@@ -99,7 +99,7 @@ export default {
         return;
       }
       this.reconnectInterval = Math.min(this.maxReconnectInterval, this.reconnectInterval + 1000);
-      console.log(`attempting to reconnect in ${this.reconnectInterval}ms`);
+      console.log(`${(new Date()).toISOString()}: attempting to reconnect in ${this.reconnectInterval}ms`);
       window.reconnectTimerId = setTimeout(() => this.interactWithServer(), this.reconnectInterval);
     },
 
@@ -109,22 +109,22 @@ export default {
       this.socket = socket;
 
       socket.onerror = event => {
-        console.log(`websocket error: ${event}`);
+        console.log(`${(new Date()).toISOString()}: websocket error: ${event}`);
         this.resetReconnectTimer();
         this.reconnect();
       }
 
       socket.onopen = () => {
-        console.log("established new websocket connection")
+        console.log(`${(new Date()).toISOString()}: established new websocket connection`)
         this.resetReconnectTimer();
         this.reconnectInterval = 0;
       }
 
       socket.onclose = event => {
         if (event.wasClean) {
-          console.log("clean socket close: ", event);
+          console.log(`${(new Date()).toISOString()}: clean socket close: `, event);
         } else {
-          console.log("dirty socket close: ", event);
+          console.log(`${(new Date()).toISOString()}: dirty socket close: `, event);
         }
         // this.currentState = this.State.Error;
 
@@ -132,7 +132,7 @@ export default {
       }
 
       socket.onerror = event => {
-        console.log("socket error", event);
+        console.log(`${(new Date()).toISOString()}: socket error`, event);
         this.currentState = this.State.Error;
       }
 

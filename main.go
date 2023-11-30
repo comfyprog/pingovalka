@@ -60,7 +60,7 @@ func main() {
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
 	}
-	wsHandler := makeWebsocketHandler(&upgrader, pingMux)
+	wsHandler := makeWebsocketHandler(&upgrader, pingMux, time.Second*10)
 
 	indexPageTemplate := template.Must(template.ParseFS(frontend.FrontendFs, "index.html"))
 	indexPageData := makeIndexData(config.PageTitle, wsUrl)
