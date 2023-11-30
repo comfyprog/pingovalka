@@ -10,8 +10,8 @@ import (
 )
 
 func makePingStatusString(stat *probing.Statistics, t time.Duration) string {
-	return fmt.Sprintf("ping %s: %d packets transmitted, %d received, %.2f%% packet loss, time %v, avg rtt %v",
-		stat.Addr, stat.PacketsSent, stat.PacketsRecv, stat.PacketLoss, t.Round(10*time.Millisecond), stat.AvgRtt.Round(10*time.Millisecond))
+	return fmt.Sprintf("ping %s at %s: %d packets transmitted, %d received, %.2f%% packet loss, time %v, avg rtt %v",
+		stat.Addr, time.Now().Format(time.DateTime), stat.PacketsSent, stat.PacketsRecv, stat.PacketLoss, t.Round(10*time.Millisecond), stat.AvgRtt.Round(time.Millisecond))
 }
 
 func getStatus(addr string, count int, size int, timeout time.Duration, lastStatus string) (newStatus, newStatusText string) {
@@ -53,8 +53,7 @@ func getStatus(addr string, count int, size int, timeout time.Duration, lastStat
 	return
 }
 
-func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {
-	statusChan := make(chan Host, 5)
+func pingHosts(hosts []Host, pingChan chan<- Host, stopChan <-chan struct{}, constantUpdates bool) {
 	for _, h := range hosts {
 		go func(h Host, status chan<- Host, stop <-chan struct{}) {
 			ticker := time.NewTicker(h.PingConfig.Interval)
@@ -62,21 +61,22 @@ func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {
 				select {
 				case <-ticker.C:
 					newStatus, newStatusText := getStatus(h.Addr, h.PingConfig.Count, h.PingConfig.Size, h.PingConfig.Timeout, h.Status)
-					if newStatus != h.Status {
-						h.Status = newStatus
-						h.StatusText = newStatusText
+					oldStatus := h.Status
+					h.Status = newStatus
+					h.StatusText = newStatusText
+					if newStatus != oldStatus {
 						h.StatusChangeTime = time.Now().Unix()
+					}
+					if constantUpdates || newStatus != oldStatus {
 						status <- h
 					}
 				case <-stop:
 					ticker.Stop()
-					close(statusChan)
 					return
 				}
 			}
-		}(h, statusChan, stopChan)
+		}(h, pingChan, stopChan)
 	}
-	return statusChan
 }
 
 type PingMux struct {
@@ -122,7 +122,6 @@ func (m *PingMux) GetHosts() []Host {
 func (m *PingMux) TransmitStatuses() {
 	for host := range m.mainChan {
 		m.mu.Lock()
-		log.Printf("%s [%s] changed status to '%s'", host.Name, host.Addr, host.Status)
 		for i := range m.hosts {
 			if m.hosts[i].Id == host.Id {
 				m.hosts[i].Status = host.Status

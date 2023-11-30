@@ -71,12 +71,13 @@ type BasicAuthCredentials struct {
 }
 
 type AppConfig struct {
-	PageTitle  string `yaml:"pageTitle"`
-	ListenHost string `yaml:"listenHost"`
-	ListenPort int    `yaml:"listenPort"`
-	PingConfig `yaml:",inline"`
-	Hosts      []Host                 `yaml:"hosts,flow"`
-	BasicAuth  []BasicAuthCredentials `yaml:"basicAuth,flow"`
+	PageTitle       string `yaml:"pageTitle"`
+	ListenHost      string `yaml:"listenHost"`
+	ListenPort      int    `yaml:"listenPort"`
+	PingConfig      `yaml:",inline"`
+	ConstantUpdates bool                   `yaml:"constant_updates"`
+	Hosts           []Host                 `yaml:"hosts,flow"`
+	BasicAuth       []BasicAuthCredentials `yaml:"basicAuth,flow"`
 }
 
 func (a *AppConfig) ListenAddr() string {

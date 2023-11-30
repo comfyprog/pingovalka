@@ -53,7 +53,10 @@ func main() {
 	}
 
 	stopChan := make(chan struct{})
-	pingChan := pingHosts(config.Hosts, stopChan)
+	pingChan := make(chan Host, 5)
+	defer close(pingChan)
+	pingHosts(config.Hosts, pingChan, stopChan, config.ConstantUpdates)
+
 	pingMux := NewPingMux(config.Hosts, pingChan)
 
 	upgrader := websocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
