@@ -35,11 +35,17 @@ export default {
         return `ws://${location.host}${wsUrl}`
     },
   
-    playStatusSound(status) {
-      if (status == "online" && this.soundUpPlay) {
+    playStatusSound(newStatus, oldStatus) {
+      if (newStatus == oldStatus) {
+        return;
+      }
+      if (newStatus == "online" && this.soundUpPlay) {
+        if (oldStatus == "unstable") {
+          return;
+        }
         this.soundUp.play();
       }
-      if (status == "offline" && this.soundDownPlay) {
+      if (newStatus == "offline" && this.soundDownPlay) {
         this.soundDown.play();
       }
     },
@@ -103,10 +109,10 @@ export default {
         `host ${host.name} [${host.addr}] updated status: '${host.status}'`);
       for (let i = 0; i < this.hosts.length; i++) {
         if (this.hosts[i].id == host.id) {
+          this.playStatusSound(host.status, this.hosts[i].status);
           this.hosts[i].status = host.status;
           this.hosts[i].statusText = host.statusText;
           this.hosts[i].statusChangeTime = host.statusChangeTime;
-          this.playStatusSound(host.status);
           return;
         }
       }
