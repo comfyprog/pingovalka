@@ -59,22 +59,52 @@ export default {
     },
     
     getHostClass(host) {
-      if (host.status == "offline") {
-        return "is-danger";
-      } else if (host.status == "online") {
-        return "is-success";
-      } else {
-        return "is-primary";
+      switch (host.status) {
+        case "online":
+          return "is-success"
+        case "offline":
+          return "is-danger"
+        case "unstable":
+          return "is-warning"
+        default:
+          return "is-primary"
+      }
+    },
+
+    getHostArrow(host) {
+      switch (host.status) {
+        case "online":
+          return "↑"
+        case "offline":
+          return "↓"
+        case "unstable":
+          return "↝"
+        default:
+          return "│"
+      }
+    },
+
+    getHostStatusString(host) {
+      switch (host.status) {
+        case "online":
+          return "Online"
+        case "offline":
+          return "Offline"
+        case "unstable":
+          return "Online (with packet loss)"
+        default:
+          return "-"
       }
     },
 
     changeStatus(host) {      
       console.log(
         this.convertUnixSecondsToDateString(host.statusChangeTime),
-        `host ${host.name} [${host.addr}] changed status to '${host.status}'`);
+        `host ${host.name} [${host.addr}] updated status: '${host.status}'`);
       for (let i = 0; i < this.hosts.length; i++) {
         if (this.hosts[i].id == host.id) {
           this.hosts[i].status = host.status;
+          this.hosts[i].statusText = host.statusText;
           this.hosts[i].statusChangeTime = host.statusChangeTime;
           this.playStatusSound(host.status);
           return;
@@ -234,13 +264,7 @@ export default {
       <div class="column notification is-light m-1" :class="getHostClass(host)" v-for="host in row" :key="host.id"
         @click="hostInfo = host">
         <h1 class="title" :class="titleClass">
-          <template v-if="host.status == 'online'">
-          ↑
-          </template>
-          <template v-if="host.status == 'offline'">
-          ↓
-          </template>
-          {{ host.name }}
+          {{ getHostArrow(host) }} {{ host.name }}
         </h1>
         <h6 class="subtitle is-7">
         {{ host.addr }}
@@ -262,9 +286,11 @@ export default {
             <p class="subtitle">{{ hostInfo.addr }}</p>
 
             <div class="content">
-              <div class="notification is-light" :class="{'is-danger': hostInfo.status == 'offline', 'is-success': hostInfo.status == 'online'}">
+              <div class="notification is-light" :class="getHostClass(hostInfo)">
                 <small>
-                 <strong>{{ hostInfo.status }} since: {{ convertUnixSecondsToDateString(hostInfo.statusChangeTime) }}</strong>
+                  <strong>{{ getHostStatusString(hostInfo) }} since: {{ convertUnixSecondsToDateString(hostInfo.statusChangeTime) }}</strong>
+                  <br>
+                  <strong>{{ hostInfo.statusText }}</strong>
                 </small>
               </div>
 

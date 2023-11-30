@@ -57,7 +57,10 @@ func makeWebsocketHandler(upgrader *websocket.Upgrader, pingMux *PingMux, socket
 
 		for {
 			select {
-			case host := <-pingChan:
+			case host, ok := <-pingChan:
+				if !ok {
+					return
+				}
 				msg := HostStatusMessage{WebsocketMessage: WebsocketMessage{MsgType: "status"}, Host: host}
 				err := conn.WriteJSON(msg)
 				if err != nil {

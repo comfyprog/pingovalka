@@ -21,9 +21,10 @@ type PingConfig struct {
 }
 
 const (
-	online   = "online"
-	offline  = "offline"
-	progname = "pingovalka"
+	statusOnline         = "online"
+	statusOnlineUnstable = "unstable"
+	statusOffline        = "offline"
+	progname             = "pingovalka"
 )
 
 type RawHostInfo struct {
@@ -46,6 +47,7 @@ type Host struct {
 	Info             []HostInfo    `yaml:"-" json:"info"`
 	Status           string        `yaml:"-" json:"status"`
 	StatusChangeTime int64         `yaml:"-" json:"statusChangeTime"`
+	StatusText       string        `yaml:"-" json:"statusText"`
 	PingConfig       `yaml:",inline" json:"-"`
 }
 
@@ -139,7 +141,7 @@ func parseConfig(rawConfig []byte) (AppConfig, error) {
 
 	for i, h := range config.Hosts {
 		config.Hosts[i].Id = i
-		config.Hosts[i].Status = offline
+		config.Hosts[i].Status = statusOffline
 		config.Hosts[i].extractInfoFromRaw()
 		if h.Size == 0 {
 			config.Hosts[i].Size = config.Size

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -8,7 +9,12 @@ import (
 	"github.com/go-ping/ping"
 )
 
-func isOnline(addr string, count int, size int, timeout time.Duration) bool {
+func makePingStatusString(stat *ping.Statistics, t time.Duration) string {
+	return fmt.Sprintf("ping %s: %d packets transmitted, %d received, %.2f%% packet loss, time %v, avg rtt %v",
+		stat.Addr, stat.PacketsSent, stat.PacketsRecv, stat.PacketLoss, t.Round(10*time.Millisecond), stat.AvgRtt.Round(10*time.Millisecond))
+}
+
+func getStatus(addr string, count int, size int, timeout time.Duration, lastStatus string) (newStatus, newStatusText string) {
 	pinger, err := ping.NewPinger(addr)
 	if err != nil {
 		panic(err)
@@ -16,9 +22,35 @@ func isOnline(addr string, count int, size int, timeout time.Duration) bool {
 	pinger.Count = count
 	pinger.Size = size
 	pinger.Timeout = timeout
-	pinger.Run()
+	startTime := time.Now()
+	err = pinger.Run()
+	if err != nil {
+		log.Printf("cannot ping %s: %s", addr, err)
+		newStatus = lastStatus
+		return
+	}
 	stats := pinger.Statistics()
-	return stats.PacketsSent > 0 && stats.PacketsRecv > (stats.PacketsSent/2)
+
+	runDuration := time.Now().Sub(startTime)
+	newStatusText = makePingStatusString(stats, runDuration)
+
+	if stats.PacketsSent == 0 {
+		newStatus = lastStatus
+		return
+	}
+
+	if stats.PacketsRecv == 0 {
+		newStatus = statusOffline
+		return
+	}
+
+	if stats.PacketsRecv != stats.PacketsSent {
+		newStatus = statusOnlineUnstable
+		return
+	}
+
+	newStatus = statusOnline
+	return
 }
 
 func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {
@@ -29,14 +61,10 @@ func pingHosts(hosts []Host, stopChan <-chan struct{}) chan Host {
 			for {
 				select {
 				case <-ticker.C:
-					var newStatus string
-					if isOnline(h.Addr, h.PingConfig.Count, h.PingConfig.Size, h.PingConfig.Timeout) {
-						newStatus = online
-					} else {
-						newStatus = offline
-					}
+					newStatus, newStatusText := getStatus(h.Addr, h.PingConfig.Count, h.PingConfig.Size, h.PingConfig.Timeout, h.Status)
 					if newStatus != h.Status {
 						h.Status = newStatus
+						h.StatusText = newStatusText
 						h.StatusChangeTime = time.Now().Unix()
 						status <- h
 					}
@@ -98,6 +126,7 @@ func (m *PingMux) TransmitStatuses() {
 		for i := range m.hosts {
 			if m.hosts[i].Id == host.Id {
 				m.hosts[i].Status = host.Status
+				m.hosts[i].StatusText = host.StatusText
 				m.hosts[i].StatusChangeTime = host.StatusChangeTime
 				break
 			}
