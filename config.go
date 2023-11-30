@@ -152,6 +152,9 @@ func parseConfig(rawConfig []byte) (AppConfig, error) {
 		if h.Timeout == time.Second*0 {
 			config.Hosts[i].Timeout = config.Timeout
 		}
+		if h.Count == 0 {
+			config.Hosts[i].Count = config.Count
+		}
 	}
 
 	return config, nil

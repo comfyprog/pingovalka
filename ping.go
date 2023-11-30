@@ -6,16 +6,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-ping/ping"
+	probing "github.com/prometheus-community/pro-bing"
 )
 
-func makePingStatusString(stat *ping.Statistics, t time.Duration) string {
+func makePingStatusString(stat *probing.Statistics, t time.Duration) string {
 	return fmt.Sprintf("ping %s: %d packets transmitted, %d received, %.2f%% packet loss, time %v, avg rtt %v",
 		stat.Addr, stat.PacketsSent, stat.PacketsRecv, stat.PacketLoss, t.Round(10*time.Millisecond), stat.AvgRtt.Round(10*time.Millisecond))
 }
 
 func getStatus(addr string, count int, size int, timeout time.Duration, lastStatus string) (newStatus, newStatusText string) {
-	pinger, err := ping.NewPinger(addr)
+	pinger, err := probing.NewPinger(addr)
 	if err != nil {
 		panic(err)
 	}
