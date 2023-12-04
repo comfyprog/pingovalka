@@ -48,6 +48,7 @@ type Host struct {
 	Status           string        `yaml:"-" json:"status"`
 	StatusChangeTime int64         `yaml:"-" json:"statusChangeTime"`
 	StatusText       string        `yaml:"-" json:"statusText"`
+	Rtt              string        `yaml:"-" json:"rtt"`
 	PingConfig       `yaml:",inline" json:"-"`
 }
 

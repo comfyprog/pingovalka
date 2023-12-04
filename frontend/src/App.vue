@@ -104,15 +104,13 @@ export default {
     },
 
     changeStatus(host) {      
-      console.log(
-        this.convertUnixSecondsToDateString(host.statusChangeTime),
-        `host ${host.name} [${host.addr}] updated status: '${host.status}'`);
       for (let i = 0; i < this.hosts.length; i++) {
         if (this.hosts[i].id == host.id) {
           this.playStatusSound(host.status, this.hosts[i].status);
           this.hosts[i].status = host.status;
           this.hosts[i].statusText = host.statusText;
           this.hosts[i].statusChangeTime = host.statusChangeTime;
+          this.hosts[i].rtt = host.rtt;
           return;
         }
       }
@@ -273,7 +271,8 @@ export default {
           {{ getHostArrow(host) }} {{ host.name }}
         </h1>
         <h6 class="subtitle is-7">
-        {{ host.addr }}
+        🖥️ &nbsp;{{ host.addr }} 
+        <template v-if="host.status != 'offline'">(⮂ {{ host.rtt }})</template>
         </h6>
       </div>
 

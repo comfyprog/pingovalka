@@ -14,7 +14,7 @@ func makePingStatusString(stat *probing.Statistics, t time.Duration) string {
 		stat.Addr, time.Now().Format(time.DateTime), stat.PacketsSent, stat.PacketsRecv, stat.PacketLoss, t.Round(10*time.Millisecond), stat.AvgRtt.Round(time.Millisecond))
 }
 
-func getStatus(addr string, count int, size int, timeout time.Duration, lastStatus string) (newStatus, newStatusText string) {
+func getStatus(addr string, count int, size int, timeout time.Duration, lastStatus string) (newStatus, newStatusText, rtt string) {
 	pinger, err := probing.NewPinger(addr)
 	if err != nil {
 		panic(err)
@@ -36,13 +36,17 @@ func getStatus(addr string, count int, size int, timeout time.Duration, lastStat
 
 	if stats.PacketsSent == 0 {
 		newStatus = lastStatus
+		rtt = "-"
 		return
 	}
 
 	if stats.PacketsRecv == 0 {
 		newStatus = statusOffline
+		rtt = "-"
 		return
 	}
+
+	rtt = stats.AvgRtt.Round(time.Millisecond).String()
 
 	if stats.PacketsRecv != stats.PacketsSent {
 		newStatus = statusOnlineUnstable
@@ -60,10 +64,11 @@ func pingHosts(hosts []Host, pingChan chan<- Host, stopChan <-chan struct{}, con
 			for {
 				select {
 				case <-ticker.C:
-					newStatus, newStatusText := getStatus(h.Addr, h.PingConfig.Count, h.PingConfig.Size, h.PingConfig.Timeout, h.Status)
+					newStatus, newStatusText, rtt := getStatus(h.Addr, h.PingConfig.Count, h.PingConfig.Size, h.PingConfig.Timeout, h.Status)
 					oldStatus := h.Status
 					h.Status = newStatus
 					h.StatusText = newStatusText
+					h.Rtt = rtt
 					if newStatus != oldStatus {
 						h.StatusChangeTime = time.Now().Unix()
 					}
@@ -127,6 +132,7 @@ func (m *PingMux) TransmitStatuses() {
 				m.hosts[i].Status = host.Status
 				m.hosts[i].StatusText = host.StatusText
 				m.hosts[i].StatusChangeTime = host.StatusChangeTime
+				m.hosts[i].Rtt = host.Rtt
 				break
 			}
 		}

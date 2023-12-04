@@ -1,3 +1,12 @@
+ftikom: &FTIKOM 
+  key: Provider
+  markdown: true
+  value: |
+    phone: 123  
+    address: hello
+
+
+
 # will be shown in browser
 pageTitle: "my pings"
 
@@ -7,7 +16,11 @@ listenHost: 127.0.0.1
 # global ping params
 interval: 10s
 size: 64
-timeout: 1s
+timeout: 6s
+count: 5
+
+# false: send information to frontend only if host status has changed, true: always send information
+constant_updates: true
 
 # this section can be skipped
 basicAuth:
@@ -19,11 +32,20 @@ basicAuth:
 hosts:
   - name: google dns
     addr: 8.8.8.8
+    info:
+      - key: Organization
+        value: Alphabet
+      - key: telephone
+        value: "**911**"
+        markdown: true
+      - <<: *FTIKOM
 
   - name: cloudflare dns
     addr: 1.1.1.1
     # some or all global params can be overriden
-    interval: 5s 
+    interval: 15s 
 
   - name: offline host
     addr: 192.168.1.10
+
+
